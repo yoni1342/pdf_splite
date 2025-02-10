@@ -8,6 +8,7 @@ This is a FastAPI-based service that converts PDF files to PNG images and return
 - Convert PDF pages to PNG images
 - Automatically compress PNG images into a ZIP file
 - Download converted images as a ZIP file
+- Automatic cleanup of temporary files after 1 hour
 
 ## Requirements
 
@@ -18,12 +19,17 @@ This is a FastAPI-based service that converts PDF files to PNG images and return
 
 ### Using Docker Compose (Recommended)
 
-1. Start the service:
+1. Create temp directory:
+```bash
+mkdir -p temp
+```
+
+2. Start the service:
 ```bash
 docker-compose up -d
 ```
 
-2. Stop the service:
+3. Stop the service:
 ```bash
 docker-compose down
 ```
@@ -57,9 +63,17 @@ You can test the API using:
 curl -X POST -F "pdf_file=@your_pdf.pdf" http://localhost:8000/convert/ --output converted_images.zip
 ```
 
+## Cleanup Service
+
+The application includes an automatic cleanup service that:
+- Runs every hour
+- Removes temporary files older than 1 hour
+- Helps manage disk space automatically
+- Logs cleanup activities to the container's log
+
 ## Error Handling
 
 The API will return appropriate error messages if:
 - The uploaded file is not a valid PDF
 - There are issues during the conversion process
-- Any system-level errors occur during processing # pdf_splite
+- Any system-level errors occur during processing

@@ -1,0 +1,19 @@
+FROM ubuntu:20.04
+
+# Install cron
+RUN apt-get update && apt-get install -y cron
+
+# Copy cleanup script
+COPY cleanup.sh /cleanup.sh
+RUN chmod +x /cleanup.sh
+
+# Add cron job
+RUN echo "*/60 * * * * /cleanup.sh >> /var/log/cron.log 2>&1" > /etc/cron.d/cleanup-cron
+RUN chmod 0644 /etc/cron.d/cleanup-cron
+RUN crontab /etc/cron.d/cleanup-cron
+
+# Create log file
+RUN touch /var/log/cron.log
+
+# Run cron in foreground
+CMD ["cron", "-f"] 
