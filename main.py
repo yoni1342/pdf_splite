@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from pdf2image import convert_from_bytes
 import tempfile
 from pathlib import Path
+import subprocess
 
 app = FastAPI(title="PDF to PNG Converter")
 
@@ -41,6 +42,41 @@ async def convert_pdf_to_png(background_tasks: BackgroundTasks, pdf_file: Upload
             filename="converted_images.zip",
             media_type="application/zip"
         )
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/extract-audio/")
+async def extract_audio(background_tasks: BackgroundTasks, video_file: UploadFile = File(...)):
+    temp_dir = "/temp"
+    video_path = Path(temp_dir) / "temp_video"
+    audio_path = Path(temp_dir) / "extracted_audio.mp3"
+    
+    try:
+        # Save the uploaded video
+        with open(video_path, "wb") as f:
+            f.write(await video_file.read())
+        
+        # Extract audio using FFmpeg
+        subprocess.run([
+            'ffmpeg',
+            '-i', str(video_path),
+            '-vn',  # No video
+            '-acodec', 'libmp3lame',  # Use MP3 codec
+            '-y',  # Overwrite output file if it exists
+            str(audio_path)
+        ], check=True)
+        
+        # Schedule cleanup
+        background_tasks.add_task(cleanup_temp_files, temp_dir)
+        
+        return FileResponse(
+            path=str(audio_path),
+            filename="extracted_audio.mp3",
+            media_type="audio/mpeg"
+        )
+        
+    except subprocess.CalledProcessError as e:
+        return {"error": f"Failed to extract audio: {str(e)}"}
     except Exception as e:
         return {"error": str(e)}
 
